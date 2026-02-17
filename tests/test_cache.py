@@ -21,3 +21,11 @@ def test_cache_store_expires_entry(tmp_path):
     path.write_text(json.dumps(stale_payload), encoding="utf-8")
     payload = cache.get("github:g-dos", ttl_seconds=60)
     assert payload is None
+
+
+def test_cache_store_ignores_corrupt_json(tmp_path):
+    cache = CacheStore(base_dir=str(tmp_path))
+    path = tmp_path / "github_g-dos.json"
+    path.write_text("{bad json", encoding="utf-8")
+    payload = cache.get("github:g-dos", ttl_seconds=60)
+    assert payload is None

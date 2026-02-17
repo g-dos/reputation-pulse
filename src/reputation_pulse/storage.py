@@ -118,7 +118,13 @@ class ScanStore:
             ).fetchone()
         if row is None:
             return None
-        return json.loads(row[0])
+        try:
+            payload = json.loads(row[0])
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        return payload
 
     def handle_insights(self, handle: str) -> dict[str, object] | None:
         with self._connect() as conn:

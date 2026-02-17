@@ -20,7 +20,10 @@ class CacheStore:
         path = self._file(key)
         if not path.exists():
             return None
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
         stored_at = datetime.fromisoformat(payload["stored_at"])
         if datetime.now(timezone.utc) - stored_at > timedelta(seconds=ttl_seconds):
             return None
