@@ -17,48 +17,43 @@ def test_health():
 
 
 def test_scan_invalid_handle(monkeypatch):
-    async def fake_run(_handle: str):
+    async def fake_scan(_handle: str):
         raise InvalidHandleError("Handle cannot be empty")
 
-    monkeypatch.setattr(api_module.analyzer, "run", fake_run)
+    monkeypatch.setattr(api_module.scan_service, "run_and_store", fake_scan)
     response = client.post("/scan", json={"handle": ""})
     assert response.status_code == 400
 
 
 def test_scan_not_found(monkeypatch):
-    async def fake_run(_handle: str):
+    async def fake_scan(_handle: str):
         raise UpstreamNotFoundError("missing")
 
-    monkeypatch.setattr(api_module.analyzer, "run", fake_run)
+    monkeypatch.setattr(api_module.scan_service, "run_and_store", fake_scan)
     response = client.post("/scan", json={"handle": "missing"})
     assert response.status_code == 404
 
 
 def test_scan_rate_limit(monkeypatch):
-    async def fake_run(_handle: str):
+    async def fake_scan(_handle: str):
         raise UpstreamRateLimitError("limited")
 
-    monkeypatch.setattr(api_module.analyzer, "run", fake_run)
+    monkeypatch.setattr(api_module.scan_service, "run_and_store", fake_scan)
     response = client.post("/scan", json={"handle": "g-dos"})
     assert response.status_code == 429
 
 
 def test_scan_success_has_trend(monkeypatch):
-    async def fake_run(_handle: str):
+    async def fake_scan(_handle: str):
         return {
             "handle": "g-dos",
             "github": {"followers": 10, "stars": 5, "recent_repos": []},
             "score": {"normalized": 12.5},
             "summary": {"rating": "Needs Attention", "recommendations": []},
+            "trend": {"direction": "up", "delta": 2.5},
         }
 
-    monkeypatch.setattr(api_module.analyzer, "run", fake_run)
-    monkeypatch.setattr(
-        api_module.store,
-        "latest_scan_for_handle",
-        lambda _handle: {"normalized_score": 10.0},
-    )
-    monkeypatch.setattr(api_module.store, "save_scan", lambda _result: None)
+    monkeypatch.setattr(api_module.scan_service, "run_and_store", fake_scan)
     response = client.post("/scan", json={"handle": "g-dos"})
     assert response.status_code == 200
     assert response.json()["trend"]["direction"] == "up"

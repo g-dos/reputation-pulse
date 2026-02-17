@@ -16,13 +16,14 @@ from reputation_pulse.errors import (
     UpstreamRateLimitError,
 )
 from reputation_pulse.html_report import write_html_report
+from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
-from reputation_pulse.trends import build_trend
 
 app = typer.Typer(help="Reputation Pulse CLI")
 console = Console()
 analyzer = ReputationAnalyzer()
 store = ScanStore()
+scan_service = ScanService(analyzer=analyzer, store=store)
 
 
 def _display_summary(result: dict[str, object]) -> None:
@@ -50,7 +51,7 @@ def scan(
 ) -> None:
     """Scan a public handle and report its reputation score."""
     try:
-        result = asyncio.run(analyzer.run(handle))
+        result = asyncio.run(scan_service.run_and_store(handle))
     except InvalidHandleError as exc:
         console.print(f"[red]Invalid handle:[/red] {exc}")
         raise typer.Exit(code=2) from exc
@@ -64,10 +65,6 @@ def scan(
         console.print(f"[red]Collector error:[/red] {exc}")
         raise typer.Exit(code=5) from exc
 
-    previous = store.latest_scan_for_handle(str(result["handle"]))
-    previous_score = None if previous is None else float(previous["normalized_score"])
-    result["trend"] = build_trend(float(result["score"]["normalized"]), previous_score)
-    store.save_scan(result)
     if json_output:
         typer.echo(json.dumps(result, indent=2))
         return

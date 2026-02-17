@@ -12,12 +12,12 @@ from reputation_pulse.errors import (
     UpstreamRateLimitError,
 )
 from reputation_pulse.html_report import render_html_report
+from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
-from reputation_pulse.trends import build_trend
 
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
-analyzer = ReputationAnalyzer()
 store = ScanStore()
+scan_service = ScanService(analyzer=ReputationAnalyzer(), store=store)
 
 
 class ScanRequest(BaseModel):
@@ -32,12 +32,7 @@ async def health() -> dict[str, str]:
 @app.post("/scan", summary="Analyze a public handle")
 async def scan(request: ScanRequest) -> dict[str, object]:
     try:
-        result = await analyzer.run(request.handle)
-        previous = store.latest_scan_for_handle(str(result["handle"]))
-        previous_score = None if previous is None else float(previous["normalized_score"])
-        result["trend"] = build_trend(float(result["score"]["normalized"]), previous_score)
-        store.save_scan(result)
-        return result
+        return await scan_service.run_and_store(request.handle)
     except InvalidHandleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except UpstreamNotFoundError as exc:
