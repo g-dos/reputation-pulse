@@ -31,3 +31,16 @@ def test_store_latest_result_for_handle(tmp_path):
     latest = store.latest_result_for_handle("g-dos")
     assert latest is not None
     assert latest["score"]["normalized"] == 15.0
+
+
+def test_store_handle_insights(tmp_path):
+    db_path = tmp_path / "store.db"
+    store = ScanStore(db_path=str(db_path))
+    store.save_scan(_sample_result("g-dos", 10.0))
+    store.save_scan(_sample_result("g-dos", 20.0))
+
+    insights = store.handle_insights("g-dos")
+    assert insights is not None
+    assert insights["scans_count"] == 2
+    assert insights["average_score"] == 15.0
+    assert insights["latest_score"] == 20.0

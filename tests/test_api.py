@@ -80,3 +80,30 @@ def test_report_returns_html(monkeypatch):
     response = client.get("/report/g-dos")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
+
+
+def test_insights_404_when_missing(monkeypatch):
+    monkeypatch.setattr(api_module.store, "handle_insights", lambda _handle: None)
+    response = client.get("/insights/missing")
+    assert response.status_code == 404
+
+
+def test_insights_success(monkeypatch):
+    monkeypatch.setattr(
+        api_module.store,
+        "handle_insights",
+        lambda _handle: {
+            "handle": "g-dos",
+            "scans_count": 3,
+            "average_score": 20.0,
+            "min_score": 10.0,
+            "max_score": 30.0,
+            "first_scan_at": "2026-01-01T00:00:00+00:00",
+            "last_scan_at": "2026-01-02T00:00:00+00:00",
+            "latest_score": 30.0,
+            "latest_rating": "Stable",
+        },
+    )
+    response = client.get("/insights/g-dos")
+    assert response.status_code == 200
+    assert response.json()["scans_count"] == 3

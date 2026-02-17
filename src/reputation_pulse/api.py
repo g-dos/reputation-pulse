@@ -56,3 +56,12 @@ async def report(handle: str) -> HTMLResponse:
     if latest is None:
         raise HTTPException(status_code=404, detail="No scan history for this handle")
     return HTMLResponse(content=render_html_report(latest))
+
+
+@app.get("/insights/{handle}", summary="Get aggregated insights for a handle")
+async def insights(handle: str) -> dict[str, object]:
+    normalized = handle.strip().lstrip("@")
+    insight = store.handle_insights(normalized)
+    if insight is None:
+        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    return insight

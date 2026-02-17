@@ -119,3 +119,46 @@ class ScanStore:
         if row is None:
             return None
         return json.loads(row[0])
+
+    def handle_insights(self, handle: str) -> dict[str, object] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT
+                    COUNT(*) as scans_count,
+                    AVG(normalized_score) as average_score,
+                    MIN(normalized_score) as min_score,
+                    MAX(normalized_score) as max_score,
+                    MIN(scanned_at) as first_scan_at,
+                    MAX(scanned_at) as last_scan_at
+                FROM scans
+                WHERE handle = ?
+                """,
+                (handle,),
+            ).fetchone()
+
+            latest_row = conn.execute(
+                """
+                SELECT normalized_score, rating
+                FROM scans
+                WHERE handle = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (handle,),
+            ).fetchone()
+
+        if row is None or row[0] == 0 or latest_row is None:
+            return None
+
+        return {
+            "handle": handle,
+            "scans_count": int(row[0]),
+            "average_score": round(float(row[1]), 2),
+            "min_score": float(row[2]),
+            "max_score": float(row[3]),
+            "first_scan_at": row[4],
+            "last_scan_at": row[5],
+            "latest_score": float(latest_row[0]),
+            "latest_rating": str(latest_row[1]),
+        }

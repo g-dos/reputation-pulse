@@ -114,3 +114,24 @@ def report(
         raise typer.Exit(code=1)
     path = write_html_report(latest, output)
     console.print(f"Report written to {path}")
+
+
+@app.command()
+def insights(handle: str) -> None:
+    """Show aggregated local insights for a handle."""
+    normalized = handle.strip().lstrip("@")
+    insight = store.handle_insights(normalized)
+    if insight is None:
+        console.print(f"No local scan found for '{normalized}'. Run scan first.")
+        raise typer.Exit(code=1)
+
+    table = Table(title=f"Insights: {normalized}", show_header=False)
+    table.add_row("Scans", str(insight["scans_count"]))
+    table.add_row("Average score", str(insight["average_score"]))
+    table.add_row("Min score", str(insight["min_score"]))
+    table.add_row("Max score", str(insight["max_score"]))
+    table.add_row("Latest score", str(insight["latest_score"]))
+    table.add_row("Latest rating", str(insight["latest_rating"]))
+    table.add_row("First scan", str(insight["first_scan_at"]))
+    table.add_row("Last scan", str(insight["last_scan_at"]))
+    console.print(table)
