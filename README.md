@@ -12,6 +12,7 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
   Default output is timestamped per handle in `reports/`.
 - Inspect aggregated local stats with `poetry run reputation-pulse insights <github-handle>`.
 - Export insights with `poetry run reputation-pulse insights-export <github-handle> --format json`.
+- Inspect raw score series with `poetry run reputation-pulse series <github-handle> --json`.
 
 ## API
 
@@ -21,6 +22,7 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 - `GET /report/{handle}`: returns HTML for the latest stored scan of that handle.
 - `GET /insights/{handle}`: returns aggregated stats (avg/min/max/latest) for a handle.
 - `GET /insights/{handle}/export?format=json|csv`: downloads insights with proper file content type.
+- `GET /series/{handle}?limit=30`: returns chronological score points for charting.
 
 ## Environment
 

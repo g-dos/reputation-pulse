@@ -73,3 +73,15 @@ def test_cli_insights_export_invalid_format(monkeypatch):
     )
     result = runner.invoke(cli_module.app, ["insights-export", "g-dos", "--format", "xml"])
     assert result.exit_code == 2
+
+
+def test_cli_series_json(monkeypatch):
+    points = [{"normalized_score": 10.0, "scanned_at": "2026-01-01T00:00:00+00:00"}]
+    monkeypatch.setattr(
+        cli_module.store,
+        "score_series",
+        lambda _handle, limit=30: points,
+    )
+    result = runner.invoke(cli_module.app, ["series", "g-dos", "--json"])
+    assert result.exit_code == 0
+    assert '"handle": "g-dos"' in result.stdout

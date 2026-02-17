@@ -169,3 +169,28 @@ def insights_export(
     target = output or default_path
     path = write_export(content, target)
     console.print(f"Insights exported to {path}")
+
+
+@app.command()
+def series(
+    handle: str,
+    limit: int = typer.Option(30, min=1, max=365, help="How many points"),
+    json_output: bool = typer.Option(False, "--json", help="Return raw JSON"),
+) -> None:
+    """Show score series for a handle."""
+    normalized = handle.strip().lstrip("@")
+    items = store.score_series(normalized, limit=limit)
+    if not items:
+        console.print(f"No local scan found for '{normalized}'. Run scan first.")
+        raise typer.Exit(code=1)
+
+    if json_output:
+        typer.echo(json.dumps({"handle": normalized, "items": items}, indent=2))
+        return
+
+    table = Table(title=f"Score Series: {normalized}")
+    table.add_column("Scanned At (UTC)")
+    table.add_column("Score")
+    for item in items:
+        table.add_row(str(item["scanned_at"]), str(item["normalized_score"]))
+    console.print(table)

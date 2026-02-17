@@ -66,6 +66,18 @@ async def insights(handle: str) -> dict[str, object]:
     return insight
 
 
+@app.get("/series/{handle}", summary="Get score time series for a handle")
+async def series(
+    handle: str,
+    limit: int = Query(default=30, ge=1, le=365),
+) -> dict[str, object]:
+    normalized = handle.strip().lstrip("@")
+    points = store.score_series(normalized, limit=limit)
+    if not points:
+        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    return {"handle": normalized, "items": points}
+
+
 @app.get("/insights/{handle}/export", summary="Export insights in CSV or JSON")
 async def insights_export(
     handle: str,

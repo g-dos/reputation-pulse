@@ -142,3 +142,22 @@ def test_insights_export_csv(monkeypatch):
     assert response.status_code == 200
     assert "text/csv" in response.headers["content-type"]
     assert "field,value" in response.text
+
+
+def test_series_404_when_missing(monkeypatch):
+    monkeypatch.setattr(api_module.store, "score_series", lambda _handle, limit=30: [])
+    response = client.get("/series/g-dos")
+    assert response.status_code == 404
+
+
+def test_series_success(monkeypatch):
+    points = [{"normalized_score": 10.0, "scanned_at": "2026-01-01T00:00:00+00:00"}]
+    monkeypatch.setattr(
+        api_module.store,
+        "score_series",
+        lambda _handle, limit=30: points,
+    )
+    response = client.get("/series/g-dos?limit=5")
+    assert response.status_code == 200
+    assert response.json()["handle"] == "g-dos"
+    assert len(response.json()["items"]) == 1
