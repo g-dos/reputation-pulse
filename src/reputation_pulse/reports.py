@@ -11,7 +11,11 @@ def _rating_label(normalized: float) -> str:
     return "Needs Attention"
 
 
-def build_summary(github_data: dict[str, object], score: ReputationScore) -> dict[str, object]:
+def build_summary(
+    github_data: dict[str, object],
+    score: ReputationScore,
+    web_data: dict[str, object] | None = None,
+) -> dict[str, object]:
     recommendations: list[str] = []
 
     if github_data.get("public_repos", 0) < 3:
@@ -25,6 +29,12 @@ def build_summary(github_data: dict[str, object], score: ReputationScore) -> dic
 
     if score.stars < 100:
         recommendations.append("Aim for a few high-quality repos to attract more stars.")
+
+    if web_data and web_data.get("blog_url"):
+        if int(web_data.get("recent_entries_30d", 0)) == 0:
+            recommendations.append(
+                "Publish a technical update on your blog or RSS to keep visibility active."
+            )
 
     return {
         "rating": _rating_label(score.normalized),

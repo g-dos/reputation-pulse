@@ -65,6 +65,7 @@ class GitHubCollector:
             "public_repos": user_data.get("public_repos", 0),
             "created_at": user_data.get("created_at"),
             "updated_at": user_data.get("updated_at"),
+            "blog_url": user_data.get("blog") or "",
             "stars": stars,
             "recent_repos": recent_repos,
         }

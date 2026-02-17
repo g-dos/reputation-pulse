@@ -37,6 +37,7 @@ def _display_summary(result: dict[str, object]) -> None:
     table.add_row("Followers", str(result["github"]["followers"]))
     table.add_row("Stars", str(result["github"]["stars"]))
     table.add_row("Recent repos", str(score["recent_repos"]))
+    table.add_row("Recent web posts (30d)", str(result["web"]["recent_entries_30d"]))
 
     console.print(table)
     if summary["recommendations"]:

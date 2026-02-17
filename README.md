@@ -38,6 +38,7 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 ## Design
 
 - `collectors/` stage collects data from GitHub and other sources.
+- RSS/blog activity is auto-detected from GitHub `blog_url` when available.
 - `scoring/` normalizes signals into actionable scores.
 - `reports/` transforms scores into summaries and recommendations for operators.
 - `storage.py` persists each scan in local SQLite for trend inspection.
