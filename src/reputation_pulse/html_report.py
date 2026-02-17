@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 
 
 def render_html_report(result: dict[str, object]) -> str:
-    handle = result["handle"]
-    score = result["score"]["normalized"]
-    rating = result["summary"]["rating"]
+    handle = escape(str(result["handle"]))
+    score = escape(str(result["score"]["normalized"]))
+    rating = escape(str(result["summary"]["rating"]))
     trend = result.get("trend", {"direction": "unknown", "delta": 0.0})
-    followers = result["github"]["followers"]
-    stars = result["github"]["stars"]
+    followers = escape(str(result["github"]["followers"]))
+    stars = escape(str(result["github"]["stars"]))
     recommendations = result["summary"]["recommendations"]
 
-    rec_items = "".join(f"<li>{item}</li>" for item in recommendations)
+    trend_direction = escape(str(trend["direction"]))
+    trend_delta = escape(f"{float(trend['delta']):+}")
+    rec_items = "".join(f"<li>{escape(str(item))}</li>" for item in recommendations)
     if not rec_items:
         rec_items = "<li>No recommendations.</li>"
     return f"""<!doctype html>
@@ -44,7 +47,7 @@ def render_html_report(result: dict[str, object]) -> str:
       <div class="meta">
         <div><span class="k">Score</span>: {score}</div>
         <div><span class="k">Rating</span>: {rating}</div>
-        <div><span class="k">Trend</span>: {trend["direction"]} ({trend["delta"]:+})</div>
+        <div><span class="k">Trend</span>: {trend_direction} ({trend_delta})</div>
         <div><span class="k">Followers</span>: {followers}</div>
         <div><span class="k">Stars</span>: {stars}</div>
       </div>
