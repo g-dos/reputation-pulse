@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
 
 from reputation_pulse.analyzer import ReputationAnalyzer
 from reputation_pulse.errors import (
@@ -12,16 +11,13 @@ from reputation_pulse.errors import (
     UpstreamRateLimitError,
 )
 from reputation_pulse.html_report import render_html_report
+from reputation_pulse.models import ScanRequest
 from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
 
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
 store = ScanStore()
 scan_service = ScanService(analyzer=ReputationAnalyzer(), store=store)
-
-
-class ScanRequest(BaseModel):
-    handle: str
 
 
 @app.get("/health", summary="Basic health check")
@@ -46,8 +42,8 @@ async def scan(request: ScanRequest) -> dict[str, object]:
 
 
 @app.get("/history", summary="Get latest scans")
-async def history(limit: int = 10) -> dict[str, object]:
-    return {"items": store.latest_scans(limit=max(1, min(limit, 100)))}
+async def history(limit: int = Query(default=10, ge=1, le=100)) -> dict[str, object]:
+    return {"items": store.latest_scans(limit=limit)}
 
 
 @app.get("/report/{handle}", response_class=HTMLResponse, summary="Get latest scan as HTML report")

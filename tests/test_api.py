@@ -21,8 +21,13 @@ def test_scan_invalid_handle(monkeypatch):
         raise InvalidHandleError("Handle cannot be empty")
 
     monkeypatch.setattr(api_module.scan_service, "run_and_store", fake_scan)
-    response = client.post("/scan", json={"handle": ""})
+    response = client.post("/scan", json={"handle": "g-dos"})
     assert response.status_code == 400
+
+
+def test_scan_rejects_blank_handle():
+    response = client.post("/scan", json={"handle": "   "})
+    assert response.status_code == 422
 
 
 def test_scan_not_found(monkeypatch):
