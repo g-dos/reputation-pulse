@@ -9,6 +9,17 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 - Collect one-shot insights with `poetry run reputation-pulse scan <github-handle>`.
 - Review local history with `poetry run reputation-pulse history --limit 20`.
 
+## API
+
+- `GET /health`: healthcheck endpoint.
+- `POST /scan`: body `{"handle":"g-dos"}` and returns normalized score + recommendations.
+- `GET /history?limit=20`: returns recent local scans persisted in SQLite.
+
+## Environment
+
+- `GITHUB_TOKEN` (optional): increases GitHub API quota.
+- Database path defaults to `reputation_pulse.db` in project root.
+
 ## Design
 
 - `collectors/` stage collects data from GitHub and other sources.
