@@ -33,15 +33,15 @@ async def scan(request: ScanRequest) -> dict[str, object]:
         store.save_scan(result)
         return result
     except InvalidHandleError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except UpstreamNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except UpstreamRateLimitError as exc:
-        raise HTTPException(status_code=429, detail=str(exc))
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except CollectorError as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.get("/history", summary="Get latest scans")

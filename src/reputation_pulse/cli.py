@@ -34,7 +34,10 @@ def _display_summary(result: dict[str, object]) -> None:
 
 
 @app.command()
-def scan(handle: str, json_output: bool = typer.Option(False, "--json", help="Return raw JSON")) -> None:
+def scan(
+    handle: str,
+    json_output: bool = typer.Option(False, "--json", help="Return raw JSON"),
+) -> None:
     """Scan a public handle and report its reputation score."""
     result = asyncio.run(analyzer.run(handle))
     store.save_scan(result)

@@ -1,7 +1,11 @@
 from fastapi.testclient import TestClient
 
 from reputation_pulse import api as api_module
-from reputation_pulse.errors import InvalidHandleError, UpstreamNotFoundError, UpstreamRateLimitError
+from reputation_pulse.errors import (
+    InvalidHandleError,
+    UpstreamNotFoundError,
+    UpstreamRateLimitError,
+)
 
 client = TestClient(api_module.app)
 

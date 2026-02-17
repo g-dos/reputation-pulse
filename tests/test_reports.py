@@ -12,7 +12,12 @@ def test_build_summary_with_low_score():
 
 
 def test_build_summary_rating_thresholds():
-    github_data = {"followers": 1000, "stars": 2000, "public_repos": 5, "recent_repos": [{"name": "foo"}]}
+    github_data = {
+        "followers": 1000,
+        "stars": 2000,
+        "public_repos": 5,
+        "recent_repos": [{"name": "foo"}],
+    }
     score = ReputationScore(followers=1000, stars=2000, recent_repos=1, normalized=95.0)
     summary = build_summary(github_data, score)
 
