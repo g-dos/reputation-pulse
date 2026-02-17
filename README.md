@@ -20,7 +20,7 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 - `GET /history?limit=20`: returns recent local scans persisted in SQLite.
 - `GET /report/{handle}`: returns HTML for the latest stored scan of that handle.
 - `GET /insights/{handle}`: returns aggregated stats (avg/min/max/latest) for a handle.
-- `GET /insights/{handle}/export?format=json|csv`: exports insight payload as serialized content.
+- `GET /insights/{handle}/export?format=json|csv`: downloads insights with proper file content type.
 
 ## Environment
 

@@ -128,8 +128,8 @@ def test_insights_export_json(monkeypatch):
     )
     response = client.get("/insights/g-dos/export?format=json")
     assert response.status_code == 200
-    assert response.json()["format"] == "json"
-    assert '"handle": "g-dos"' in response.json()["content"]
+    assert "application/json" in response.headers["content-type"]
+    assert '"handle": "g-dos"' in response.text
 
 
 def test_insights_export_csv(monkeypatch):
@@ -140,5 +140,5 @@ def test_insights_export_csv(monkeypatch):
     )
     response = client.get("/insights/g-dos/export?format=csv")
     assert response.status_code == 200
-    assert response.json()["format"] == "csv"
-    assert "field,value" in response.json()["content"]
+    assert "text/csv" in response.headers["content-type"]
+    assert "field,value" in response.text

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
 from reputation_pulse.analyzer import ReputationAnalyzer
 from reputation_pulse.errors import (
@@ -70,11 +70,19 @@ async def insights(handle: str) -> dict[str, object]:
 async def insights_export(
     handle: str,
     format: str = Query(default="json", pattern="^(json|csv)$"),
-) -> dict[str, object]:
+) -> Response:
     normalized = handle.strip().lstrip("@")
     insight = store.handle_insights(normalized)
     if insight is None:
         raise HTTPException(status_code=404, detail="No scan history for this handle")
     if format == "csv":
-        return {"format": "csv", "content": insights_to_csv(insight)}
-    return {"format": "json", "content": insights_to_json(insight)}
+        return Response(
+            content=insights_to_csv(insight),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{normalized}-insights.csv"'},
+        )
+    return Response(
+        content=insights_to_json(insight),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{normalized}-insights.json"'},
+    )
