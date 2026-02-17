@@ -9,6 +9,12 @@ from rich.console import Console
 from rich.table import Table
 
 from reputation_pulse.analyzer import ReputationAnalyzer
+from reputation_pulse.errors import (
+    CollectorError,
+    InvalidHandleError,
+    UpstreamNotFoundError,
+    UpstreamRateLimitError,
+)
 from reputation_pulse.html_report import write_html_report
 from reputation_pulse.storage import ScanStore
 from reputation_pulse.trends import build_trend
@@ -43,7 +49,21 @@ def scan(
     json_output: bool = typer.Option(False, "--json", help="Return raw JSON"),
 ) -> None:
     """Scan a public handle and report its reputation score."""
-    result = asyncio.run(analyzer.run(handle))
+    try:
+        result = asyncio.run(analyzer.run(handle))
+    except InvalidHandleError as exc:
+        console.print(f"[red]Invalid handle:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    except UpstreamNotFoundError as exc:
+        console.print(f"[red]Not found:[/red] {exc}")
+        raise typer.Exit(code=3) from exc
+    except UpstreamRateLimitError as exc:
+        console.print(f"[red]Rate limit:[/red] {exc}")
+        raise typer.Exit(code=4) from exc
+    except CollectorError as exc:
+        console.print(f"[red]Collector error:[/red] {exc}")
+        raise typer.Exit(code=5) from exc
+
     previous = store.latest_scan_for_handle(str(result["handle"]))
     previous_score = None if previous is None else float(previous["normalized_score"])
     result["trend"] = build_trend(float(result["score"]["normalized"]), previous_score)
