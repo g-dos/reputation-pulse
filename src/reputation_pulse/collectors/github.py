@@ -4,11 +4,15 @@ from typing import Any
 
 import httpx
 
+from reputation_pulse.cache import CacheStore
 from reputation_pulse.errors import CollectorError, UpstreamNotFoundError, UpstreamRateLimitError
 from reputation_pulse.settings import settings
 
 
 class GitHubCollector:
+    def __init__(self, cache: CacheStore | None = None) -> None:
+        self.cache = cache or CacheStore()
+
     def _headers(self) -> dict[str, str]:
         headers = {"Accept": "application/vnd.github+json", "User-Agent": "reputation-pulse/0.1.0"}
         if settings.github_token:
@@ -16,6 +20,11 @@ class GitHubCollector:
         return headers
 
     async def collect(self, handle: str) -> dict[str, Any]:
+        cache_key = f"github:{handle}"
+        cached = self.cache.get(cache_key, settings.github_cache_ttl_seconds)
+        if cached is not None:
+            return cached
+
         headers = self._headers()
         async with httpx.AsyncClient(timeout=settings.default_timeout) as client:
             try:
@@ -49,7 +58,7 @@ class GitHubCollector:
             )[: settings.max_recent_repos]
         ]
 
-        return {
+        result = {
             "handle": handle,
             "followers": user_data.get("followers", 0),
             "following": user_data.get("following", 0),
@@ -59,6 +68,8 @@ class GitHubCollector:
             "stars": stars,
             "recent_repos": recent_repos,
         }
+        self.cache.set(cache_key, result)
+        return result
 
     async def _collect_all_repos(
         self,

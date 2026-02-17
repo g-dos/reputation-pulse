@@ -5,6 +5,18 @@ from reputation_pulse.collectors.github import GitHubCollector
 from reputation_pulse.errors import UpstreamNotFoundError, UpstreamRateLimitError
 
 
+class FakeCache:
+    def __init__(self, cached=None):
+        self.cached = cached
+        self.saved = None
+
+    def get(self, _key: str, _ttl: int):
+        return self.cached
+
+    def set(self, _key: str, data):
+        self.saved = data
+
+
 class FakeResponse:
     def __init__(self, status_code: int, payload: object):
         self.status_code = status_code
@@ -42,10 +54,12 @@ async def test_collect_success(monkeypatch):
     ]
     monkeypatch.setattr(github_module.httpx, "AsyncClient", lambda **_kwargs: FakeClient(responses))
 
-    result = await GitHubCollector().collect("g-dos")
+    cache = FakeCache()
+    result = await GitHubCollector(cache=cache).collect("g-dos")
     assert result["followers"] == 10
     assert result["stars"] == 12
     assert result["recent_repos"][0]["name"] == "a"
+    assert cache.saved is not None
 
 
 @pytest.mark.asyncio
@@ -54,7 +68,7 @@ async def test_collect_not_found(monkeypatch):
     monkeypatch.setattr(github_module.httpx, "AsyncClient", lambda **_kwargs: FakeClient(responses))
 
     with pytest.raises(UpstreamNotFoundError):
-        await GitHubCollector().collect("missing")
+        await GitHubCollector(cache=FakeCache()).collect("missing")
 
 
 @pytest.mark.asyncio
@@ -63,7 +77,7 @@ async def test_collect_rate_limited(monkeypatch):
     monkeypatch.setattr(github_module.httpx, "AsyncClient", lambda **_kwargs: FakeClient(responses))
 
     with pytest.raises(UpstreamRateLimitError):
-        await GitHubCollector().collect("g-dos")
+        await GitHubCollector(cache=FakeCache()).collect("g-dos")
 
 
 @pytest.mark.asyncio
@@ -82,5 +96,26 @@ async def test_collect_uses_pagination(monkeypatch):
     ]
     monkeypatch.setattr(github_module.httpx, "AsyncClient", lambda **_kwargs: FakeClient(responses))
 
-    result = await GitHubCollector().collect("g-dos")
+    result = await GitHubCollector(cache=FakeCache()).collect("g-dos")
     assert result["stars"] == 103
+
+
+@pytest.mark.asyncio
+async def test_collect_uses_cache_hit(monkeypatch):
+    cached = {
+        "handle": "g-dos",
+        "followers": 10,
+        "following": 1,
+        "public_repos": 2,
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-02T00:00:00Z",
+        "stars": 12,
+        "recent_repos": [],
+    }
+    monkeypatch.setattr(
+        github_module.httpx,
+        "AsyncClient",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("HTTP should not be called")),
+    )
+    result = await GitHubCollector(cache=FakeCache(cached=cached)).collect("g-dos")
+    assert result["stars"] == 12

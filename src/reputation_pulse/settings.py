@@ -11,6 +11,8 @@ class Settings:
     max_recent_repos: int = 3
     default_timeout: float = 15.0
     db_path: str = "reputation_pulse.db"
+    cache_dir: str = ".cache/reputation-pulse"
+    github_cache_ttl_seconds: int = 900
     github_token: str = os.getenv("GITHUB_TOKEN", "")
 
 settings = Settings()

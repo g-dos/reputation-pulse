@@ -23,6 +23,7 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 
 - `GITHUB_TOKEN` (optional): increases GitHub API quota.
 - Database path defaults to `reputation_pulse.db` in project root.
+- GitHub scans are cached locally for 15 minutes in `.cache/reputation-pulse`.
 
 ## Developer workflow
 
