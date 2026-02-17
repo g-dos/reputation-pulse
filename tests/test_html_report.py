@@ -1,4 +1,4 @@
-from reputation_pulse.html_report import render_html_report
+from reputation_pulse.html_report import default_report_path, render_html_report
 
 
 def test_render_html_report_contains_key_fields():
@@ -27,3 +27,9 @@ def test_render_html_report_escapes_user_content():
     assert "<script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "&lt;img src=x onerror=alert(1)&gt;" in html
+
+
+def test_default_report_path_format():
+    path = default_report_path("g-dos")
+    assert path.startswith("reports/g-dos-")
+    assert path.endswith(".html")

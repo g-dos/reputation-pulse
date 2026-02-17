@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 
@@ -65,3 +66,8 @@ def write_html_report(result: dict[str, object], output_path: str) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(html, encoding="utf-8")
     return str(path)
+
+
+def default_report_path(handle: str) -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    return f"reports/{handle}-{timestamp}.html"

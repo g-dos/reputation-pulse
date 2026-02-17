@@ -15,7 +15,7 @@ from reputation_pulse.errors import (
     UpstreamNotFoundError,
     UpstreamRateLimitError,
 )
-from reputation_pulse.html_report import write_html_report
+from reputation_pulse.html_report import default_report_path, write_html_report
 from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
 
@@ -101,9 +101,9 @@ def history(limit: int = typer.Option(10, min=1, max=100, help="Rows to show")) 
 def report(
     handle: str,
     output: str = typer.Option(
-        "reports/reputation-report.html",
+        "",
         "--output",
-        help="Output HTML file path",
+        help="Output HTML file path (defaults to handle + timestamp)",
     ),
 ) -> None:
     """Generate an HTML report from the latest stored scan for a handle."""
@@ -112,7 +112,8 @@ def report(
     if latest is None:
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
         raise typer.Exit(code=1)
-    path = write_html_report(latest, output)
+    report_path = output or default_report_path(normalized)
+    path = write_html_report(latest, report_path)
     console.print(f"Report written to {path}")
 
 
