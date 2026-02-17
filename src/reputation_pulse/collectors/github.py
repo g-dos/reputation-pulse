@@ -4,18 +4,38 @@ from typing import Any
 
 import httpx
 
+from reputation_pulse.errors import CollectorError, UpstreamNotFoundError, UpstreamRateLimitError
 from reputation_pulse.settings import settings
 
 
 class GitHubCollector:
     async def collect(self, handle: str) -> dict[str, Any]:
+        headers = {"Accept": "application/vnd.github+json", "User-Agent": "reputation-pulse/0.1.0"}
         async with httpx.AsyncClient(timeout=settings.default_timeout) as client:
-            user_resp = await client.get(settings.github_user_url.format(handle=handle))
-            user_resp.raise_for_status()
-            repos_resp = await client.get(
-                settings.github_repos_url.format(handle=handle), params={"per_page": 50}
-            )
-            repos_resp.raise_for_status()
+            try:
+                user_resp = await client.get(
+                    settings.github_user_url.format(handle=handle),
+                    headers=headers,
+                )
+                repos_resp = await client.get(
+                    settings.github_repos_url.format(handle=handle),
+                    params={"per_page": 50},
+                    headers=headers,
+                )
+            except httpx.HTTPError as exc:
+                raise CollectorError(f"GitHub request failed: {exc}") from exc
+
+        if user_resp.status_code == 404:
+            raise UpstreamNotFoundError(f"GitHub user '{handle}' was not found")
+        if user_resp.status_code == 429:
+            raise UpstreamRateLimitError("GitHub rate limit reached")
+        if user_resp.status_code >= 400:
+            raise CollectorError(f"GitHub user lookup failed with status {user_resp.status_code}")
+
+        if repos_resp.status_code == 429:
+            raise UpstreamRateLimitError("GitHub rate limit reached")
+        if repos_resp.status_code >= 400:
+            raise CollectorError(f"GitHub repos lookup failed with status {repos_resp.status_code}")
 
         user_data = user_resp.json()
         repo_data = repos_resp.json()
