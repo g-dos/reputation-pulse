@@ -103,3 +103,19 @@ class ScanStore:
             "rating": row[2],
             "scanned_at": row[3],
         }
+
+    def latest_result_for_handle(self, handle: str) -> dict[str, object] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT payload
+                FROM scans
+                WHERE handle = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (handle,),
+            ).fetchone()
+        if row is None:
+            return None
+        return json.loads(row[0])

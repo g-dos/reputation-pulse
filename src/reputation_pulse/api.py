@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from reputation_pulse.analyzer import ReputationAnalyzer
@@ -10,6 +11,7 @@ from reputation_pulse.errors import (
     UpstreamNotFoundError,
     UpstreamRateLimitError,
 )
+from reputation_pulse.html_report import render_html_report
 from reputation_pulse.storage import ScanStore
 from reputation_pulse.trends import build_trend
 
@@ -51,3 +53,11 @@ async def scan(request: ScanRequest) -> dict[str, object]:
 @app.get("/history", summary="Get latest scans")
 async def history(limit: int = 10) -> dict[str, object]:
     return {"items": store.latest_scans(limit=max(1, min(limit, 100)))}
+
+
+@app.get("/report/{handle}", response_class=HTMLResponse, summary="Get latest scan as HTML report")
+async def report(handle: str) -> HTMLResponse:
+    latest = store.latest_result_for_handle(handle.strip().lstrip("@"))
+    if latest is None:
+        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    return HTMLResponse(content=render_html_report(latest))

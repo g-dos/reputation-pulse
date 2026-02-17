@@ -62,3 +62,26 @@ def test_scan_success_has_trend(monkeypatch):
     response = client.post("/scan", json={"handle": "g-dos"})
     assert response.status_code == 200
     assert response.json()["trend"]["direction"] == "up"
+
+
+def test_report_404_when_missing(monkeypatch):
+    monkeypatch.setattr(api_module.store, "latest_result_for_handle", lambda _handle: None)
+    response = client.get("/report/missing")
+    assert response.status_code == 404
+
+
+def test_report_returns_html(monkeypatch):
+    monkeypatch.setattr(
+        api_module.store,
+        "latest_result_for_handle",
+        lambda _handle: {
+            "handle": "g-dos",
+            "github": {"followers": 1, "stars": 2},
+            "score": {"normalized": 10.0},
+            "summary": {"rating": "Needs Attention", "recommendations": []},
+            "trend": {"direction": "new", "delta": 0.0},
+        },
+    )
+    response = client.get("/report/g-dos")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]

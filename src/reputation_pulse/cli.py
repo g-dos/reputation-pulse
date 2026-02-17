@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from reputation_pulse.analyzer import ReputationAnalyzer
+from reputation_pulse.html_report import write_html_report
 from reputation_pulse.storage import ScanStore
 from reputation_pulse.trends import build_trend
 
@@ -77,3 +78,22 @@ def history(limit: int = typer.Option(10, min=1, max=100, help="Rows to show")) 
             str(row["scanned_at"]),
         )
     console.print(table)
+
+
+@app.command()
+def report(
+    handle: str,
+    output: str = typer.Option(
+        "reports/reputation-report.html",
+        "--output",
+        help="Output HTML file path",
+    ),
+) -> None:
+    """Generate an HTML report from the latest stored scan for a handle."""
+    normalized = handle.strip().lstrip("@")
+    latest = store.latest_result_for_handle(normalized)
+    if latest is None:
+        console.print(f"No local scan found for '{normalized}'. Run scan first.")
+        raise typer.Exit(code=1)
+    path = write_html_report(latest, output)
+    console.print(f"Report written to {path}")
