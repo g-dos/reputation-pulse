@@ -61,3 +61,16 @@ def test_store_latest_result_handles_corrupt_payload(tmp_path):
 
     latest = store.latest_result_for_handle("g-dos")
     assert latest is None
+
+
+def test_store_score_series_orders_oldest_to_newest(tmp_path):
+    db_path = tmp_path / "store.db"
+    store = ScanStore(db_path=str(db_path))
+    store.save_scan(_sample_result("g-dos", 10.0))
+    store.save_scan(_sample_result("g-dos", 20.0))
+    store.save_scan(_sample_result("g-dos", 30.0))
+
+    series = store.score_series("g-dos", limit=2)
+    assert len(series) == 2
+    assert series[0]["normalized_score"] == 20.0
+    assert series[1]["normalized_score"] == 30.0

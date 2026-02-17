@@ -168,3 +168,21 @@ class ScanStore:
             "latest_score": float(latest_row[0]),
             "latest_rating": str(latest_row[1]),
         }
+
+    def score_series(self, handle: str, limit: int = 30) -> list[dict[str, object]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT normalized_score, scanned_at
+                FROM scans
+                WHERE handle = ?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (handle, limit),
+            ).fetchall()
+
+        return [
+            {"normalized_score": float(row[0]), "scanned_at": row[1]}
+            for row in reversed(rows)
+        ]
