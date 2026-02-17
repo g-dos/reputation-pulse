@@ -118,3 +118,27 @@ def test_insights_success(monkeypatch):
     response = client.get("/insights/g-dos")
     assert response.status_code == 200
     assert response.json()["scans_count"] == 3
+
+
+def test_insights_export_json(monkeypatch):
+    monkeypatch.setattr(
+        api_module.store,
+        "handle_insights",
+        lambda _handle: {"handle": "g-dos", "scans_count": 1},
+    )
+    response = client.get("/insights/g-dos/export?format=json")
+    assert response.status_code == 200
+    assert response.json()["format"] == "json"
+    assert '"handle": "g-dos"' in response.json()["content"]
+
+
+def test_insights_export_csv(monkeypatch):
+    monkeypatch.setattr(
+        api_module.store,
+        "handle_insights",
+        lambda _handle: {"handle": "g-dos", "scans_count": 1},
+    )
+    response = client.get("/insights/g-dos/export?format=csv")
+    assert response.status_code == 200
+    assert response.json()["format"] == "csv"
+    assert "field,value" in response.json()["content"]

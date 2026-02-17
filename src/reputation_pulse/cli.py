@@ -15,6 +15,7 @@ from reputation_pulse.errors import (
     UpstreamNotFoundError,
     UpstreamRateLimitError,
 )
+from reputation_pulse.exporters import insights_to_csv, insights_to_json, write_export
 from reputation_pulse.html_report import default_report_path, write_html_report
 from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
@@ -137,3 +138,33 @@ def insights(handle: str) -> None:
     table.add_row("First scan", str(insight["first_scan_at"]))
     table.add_row("Last scan", str(insight["last_scan_at"]))
     console.print(table)
+
+
+@app.command("insights-export")
+def insights_export(
+    handle: str,
+    format: str = typer.Option("json", "--format", help="json or csv"),
+    output: str = typer.Option("", "--output", help="Output file path"),
+) -> None:
+    """Export aggregated insights to JSON or CSV."""
+    normalized = handle.strip().lstrip("@")
+    insight = store.handle_insights(normalized)
+    if insight is None:
+        console.print(f"No local scan found for '{normalized}'. Run scan first.")
+        raise typer.Exit(code=1)
+
+    export_format = format.strip().lower()
+    if export_format not in {"json", "csv"}:
+        console.print("Invalid format. Use --format json or --format csv.")
+        raise typer.Exit(code=2)
+
+    if export_format == "csv":
+        content = insights_to_csv(insight)
+        default_path = f"reports/{normalized}-insights.csv"
+    else:
+        content = insights_to_json(insight)
+        default_path = f"reports/{normalized}-insights.json"
+
+    target = output or default_path
+    path = write_export(content, target)
+    console.print(f"Insights exported to {path}")

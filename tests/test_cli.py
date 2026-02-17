@@ -51,3 +51,25 @@ def test_cli_report_uses_default_path(monkeypatch):
     result = runner.invoke(cli_module.app, ["report", "g-dos"])
     assert result.exit_code == 0
     assert "reports/default.html" in result.stdout
+
+
+def test_cli_insights_export_json(monkeypatch):
+    monkeypatch.setattr(
+        cli_module.store,
+        "handle_insights",
+        lambda _handle: {"handle": "g-dos", "scans_count": 2},
+    )
+    monkeypatch.setattr(cli_module, "write_export", lambda _content, path: path)
+    result = runner.invoke(cli_module.app, ["insights-export", "g-dos", "--format", "json"])
+    assert result.exit_code == 0
+    assert "g-dos-insights.json" in result.stdout
+
+
+def test_cli_insights_export_invalid_format(monkeypatch):
+    monkeypatch.setattr(
+        cli_module.store,
+        "handle_insights",
+        lambda _handle: {"handle": "g-dos", "scans_count": 2},
+    )
+    result = runner.invoke(cli_module.app, ["insights-export", "g-dos", "--format", "xml"])
+    assert result.exit_code == 2

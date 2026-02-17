@@ -10,6 +10,7 @@ from reputation_pulse.errors import (
     UpstreamNotFoundError,
     UpstreamRateLimitError,
 )
+from reputation_pulse.exporters import insights_to_csv, insights_to_json
 from reputation_pulse.html_report import render_html_report
 from reputation_pulse.models import ScanRequest
 from reputation_pulse.scan_service import ScanService
@@ -63,3 +64,17 @@ async def insights(handle: str) -> dict[str, object]:
     if insight is None:
         raise HTTPException(status_code=404, detail="No scan history for this handle")
     return insight
+
+
+@app.get("/insights/{handle}/export", summary="Export insights in CSV or JSON")
+async def insights_export(
+    handle: str,
+    format: str = Query(default="json", pattern="^(json|csv)$"),
+) -> dict[str, object]:
+    normalized = handle.strip().lstrip("@")
+    insight = store.handle_insights(normalized)
+    if insight is None:
+        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    if format == "csv":
+        return {"format": "csv", "content": insights_to_csv(insight)}
+    return {"format": "json", "content": insights_to_json(insight)}
