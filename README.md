@@ -1,0 +1,21 @@
+# reputation-pulse
+
+Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedIn, etc.) and gathers quantitative signals to score reputational activity for decision-makers. It includes a FastAPI endpoint for automation pipelines and a Typer-powered CLI for interactive scans.
+
+## Getting started
+
+- Install via `python3 -m pip install --user poetry` and then `poetry install`.
+- Start the API with `poetry run reputation-pulse api`.
+- Collect one-shot insights with `poetry run reputation-pulse scan <github-handle>`.
+
+## Design
+
+- `collectors/` stage collects data from GitHub and other sources.
+- `scoring/` normalizes signals into actionable scores.
+- `reports/` transforms scores into summaries and recommendations for operators.
+
+## Next steps
+
+- Add connectors for LinkedIn or RSS feeds (watch for rate limits and scraping rules).
+- Introduce caching so repeated scans reuse recent data and avoid hitting public APIs.
+- Add webhook/Slack notifications when the weekly score changes by more than 10%.

@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "reputation-pulse"
+version = "0.1.0"
+description = "Collects public reputation signals and scores them to suggest actionable steps."
+authors = ["g-dos <guilhermesantiagg@gmail.com>"]
+readme = "README.md"
+packages = [
+  { include = "reputation_pulse", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+fastapi = "^0.110.0"
+uvicorn = { extras = ["standard"], version = "^0.23.0" }
+typer = { extras = ["all"], version = "^0.9.0" }
+httpx = { extras = ["http2"], version = "^0.28.1" }
+rich = "^13.5.0"
+loguru = "^0.7.0"
+
+[tool.poetry.group.dev]
+optional = false
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.0"
+pytest-asyncio = "^1.2.0"
+black = "^23.12.0"
+ruff = "^0.15.1"
+python-dotenv = "^1.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
