@@ -10,6 +10,7 @@ from rich.table import Table
 
 from reputation_pulse.analyzer import ReputationAnalyzer
 from reputation_pulse.storage import ScanStore
+from reputation_pulse.trends import build_trend
 
 app = typer.Typer(help="Reputation Pulse CLI")
 console = Console()
@@ -20,8 +21,10 @@ store = ScanStore()
 def _display_summary(result: dict[str, object]) -> None:
     score = result["score"]
     summary = result["summary"]
+    trend = result["trend"]
     table = Table(title=f"Reputation Pulse: {result['handle']}", show_header=False)
     table.add_row("Normalized score", f"{score['normalized']} ({summary['rating']})")
+    table.add_row("Trend", f"{trend['direction']} ({trend['delta']:+})")
     table.add_row("Followers", str(result["github"]["followers"]))
     table.add_row("Stars", str(result["github"]["stars"]))
     table.add_row("Recent repos", str(score["recent_repos"]))
@@ -40,6 +43,9 @@ def scan(
 ) -> None:
     """Scan a public handle and report its reputation score."""
     result = asyncio.run(analyzer.run(handle))
+    previous = store.latest_scan_for_handle(str(result["handle"]))
+    previous_score = None if previous is None else float(previous["normalized_score"])
+    result["trend"] = build_trend(float(result["score"]["normalized"]), previous_score)
     store.save_scan(result)
     if json_output:
         typer.echo(json.dumps(result, indent=2))

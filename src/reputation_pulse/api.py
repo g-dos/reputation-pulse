@@ -11,6 +11,7 @@ from reputation_pulse.errors import (
     UpstreamRateLimitError,
 )
 from reputation_pulse.storage import ScanStore
+from reputation_pulse.trends import build_trend
 
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
 analyzer = ReputationAnalyzer()
@@ -30,6 +31,9 @@ async def health() -> dict[str, str]:
 async def scan(request: ScanRequest) -> dict[str, object]:
     try:
         result = await analyzer.run(request.handle)
+        previous = store.latest_scan_for_handle(str(result["handle"]))
+        previous_score = None if previous is None else float(previous["normalized_score"])
+        result["trend"] = build_trend(float(result["score"]["normalized"]), previous_score)
         store.save_scan(result)
         return result
     except InvalidHandleError as exc:

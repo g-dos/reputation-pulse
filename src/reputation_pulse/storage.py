@@ -80,3 +80,26 @@ class ScanStore:
             }
             for row in rows
         ]
+
+    def latest_scan_for_handle(self, handle: str) -> dict[str, object] | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT handle, normalized_score, rating, scanned_at
+                FROM scans
+                WHERE handle = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (handle,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return {
+            "handle": row[0],
+            "normalized_score": row[1],
+            "rating": row[2],
+            "scanned_at": row[3],
+        }
