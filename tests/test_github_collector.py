@@ -64,3 +64,23 @@ async def test_collect_rate_limited(monkeypatch):
 
     with pytest.raises(UpstreamRateLimitError):
         await GitHubCollector().collect("g-dos")
+
+
+@pytest.mark.asyncio
+async def test_collect_uses_pagination(monkeypatch):
+    page_one = [
+        {"name": f"repo-{idx}", "pushed_at": "2024-01-01T00:00:00Z", "stargazers_count": 1}
+        for idx in range(100)
+    ]
+    responses = [
+        FakeResponse(200, {"followers": 10, "following": 1, "public_repos": 3}),
+        FakeResponse(200, page_one),
+        FakeResponse(
+            200,
+            [{"name": "c", "pushed_at": "2024-01-03T00:00:00Z", "stargazers_count": 3}],
+        ),
+    ]
+    monkeypatch.setattr(github_module.httpx, "AsyncClient", lambda **_kwargs: FakeClient(responses))
+
+    result = await GitHubCollector().collect("g-dos")
+    assert result["stars"] == 103

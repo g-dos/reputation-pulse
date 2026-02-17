@@ -6,6 +6,8 @@ from dataclasses import dataclass
 class Settings:
     github_user_url: str = "https://api.github.com/users/{handle}"
     github_repos_url: str = "https://api.github.com/users/{handle}/repos"
+    github_repos_per_page: int = 100
+    github_max_repo_pages: int = 10
     max_recent_repos: int = 3
     default_timeout: float = 15.0
     db_path: str = "reputation_pulse.db"
