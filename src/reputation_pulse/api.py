@@ -10,9 +10,11 @@ from reputation_pulse.errors import (
     UpstreamNotFoundError,
     UpstreamRateLimitError,
 )
+from reputation_pulse.storage import ScanStore
 
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
 analyzer = ReputationAnalyzer()
+store = ScanStore()
 
 
 class ScanRequest(BaseModel):
@@ -27,7 +29,9 @@ async def health() -> dict[str, str]:
 @app.post("/scan", summary="Analyze a public handle")
 async def scan(request: ScanRequest) -> dict[str, object]:
     try:
-        return await analyzer.run(request.handle)
+        result = await analyzer.run(request.handle)
+        store.save_scan(result)
+        return result
     except InvalidHandleError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except UpstreamNotFoundError as exc:
@@ -38,3 +42,8 @@ async def scan(request: ScanRequest) -> dict[str, object]:
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception as exc:  # pragma: no cover
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/history", summary="Get latest scans")
+async def history(limit: int = 10) -> dict[str, object]:
+    return {"items": store.latest_scans(limit=max(1, min(limit, 100)))}

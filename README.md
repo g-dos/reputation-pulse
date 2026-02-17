@@ -7,12 +7,14 @@ Reputation Pulse is a Python toolkit that scans a public handle (GitHub, LinkedI
 - Install via `python3 -m pip install --user poetry` and then `poetry install`.
 - Start the API with `poetry run reputation-pulse api`.
 - Collect one-shot insights with `poetry run reputation-pulse scan <github-handle>`.
+- Review local history with `poetry run reputation-pulse history --limit 20`.
 
 ## Design
 
 - `collectors/` stage collects data from GitHub and other sources.
 - `scoring/` normalizes signals into actionable scores.
 - `reports/` transforms scores into summaries and recommendations for operators.
+- `storage.py` persists each scan in local SQLite for trend inspection.
 
 ## Next steps
 

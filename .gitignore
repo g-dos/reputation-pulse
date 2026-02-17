@@ -10,3 +10,4 @@ build/
 .caches/
 .idea/
 .vscode/
+*.db
