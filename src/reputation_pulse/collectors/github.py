@@ -9,8 +9,14 @@ from reputation_pulse.settings import settings
 
 
 class GitHubCollector:
-    async def collect(self, handle: str) -> dict[str, Any]:
+    def _headers(self) -> dict[str, str]:
         headers = {"Accept": "application/vnd.github+json", "User-Agent": "reputation-pulse/0.1.0"}
+        if settings.github_token:
+            headers["Authorization"] = f"Bearer {settings.github_token}"
+        return headers
+
+    async def collect(self, handle: str) -> dict[str, Any]:
+        headers = self._headers()
         async with httpx.AsyncClient(timeout=settings.default_timeout) as client:
             try:
                 user_resp = await client.get(
@@ -27,12 +33,12 @@ class GitHubCollector:
 
         if user_resp.status_code == 404:
             raise UpstreamNotFoundError(f"GitHub user '{handle}' was not found")
-        if user_resp.status_code == 429:
+        if user_resp.status_code in (403, 429):
             raise UpstreamRateLimitError("GitHub rate limit reached")
         if user_resp.status_code >= 400:
             raise CollectorError(f"GitHub user lookup failed with status {user_resp.status_code}")
 
-        if repos_resp.status_code == 429:
+        if repos_resp.status_code in (403, 429):
             raise UpstreamRateLimitError("GitHub rate limit reached")
         if repos_resp.status_code >= 400:
             raise CollectorError(f"GitHub repos lookup failed with status {repos_resp.status_code}")
