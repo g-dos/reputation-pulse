@@ -33,3 +33,17 @@ def test_default_report_path_format():
     path = default_report_path("g-dos")
     assert path.startswith("reports/g-dos-")
     assert path.endswith(".html")
+
+
+def test_render_html_report_with_series_has_svg():
+    result = {
+        "handle": "g-dos",
+        "github": {"followers": 10, "stars": 5},
+        "score": {"normalized": 32.5},
+        "summary": {"rating": "Needs Attention", "recommendations": []},
+        "trend": {"direction": "up", "delta": 2.0},
+    }
+    series = [{"normalized_score": 10.0}, {"normalized_score": 15.0}, {"normalized_score": 32.5}]
+    html = render_html_report(result, score_series=series)
+    assert "<svg" in html
+    assert "Score History" in html

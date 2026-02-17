@@ -43,7 +43,11 @@ def test_cli_report_uses_default_path(monkeypatch):
         },
     )
     monkeypatch.setattr(cli_module, "default_report_path", lambda _handle: "reports/default.html")
-    monkeypatch.setattr(cli_module, "write_html_report", lambda _latest, _path: _path)
+    monkeypatch.setattr(
+        cli_module,
+        "write_html_report",
+        lambda _latest, _path, score_series=None: _path,
+    )
     result = runner.invoke(cli_module.app, ["report", "g-dos"])
     assert result.exit_code == 0
     assert "reports/default.html" in result.stdout

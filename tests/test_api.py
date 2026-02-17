@@ -82,9 +82,15 @@ def test_report_returns_html(monkeypatch):
             "trend": {"direction": "new", "delta": 0.0},
         },
     )
+    monkeypatch.setattr(
+        api_module.store,
+        "score_series",
+        lambda _handle, limit=30: [{"normalized_score": 10.0}, {"normalized_score": 11.0}],
+    )
     response = client.get("/report/g-dos")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
+    assert "Score History" in response.text
 
 
 def test_insights_404_when_missing(monkeypatch):

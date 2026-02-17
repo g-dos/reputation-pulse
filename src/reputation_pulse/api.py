@@ -48,10 +48,12 @@ async def history(limit: int = Query(default=10, ge=1, le=100)) -> dict[str, obj
 
 @app.get("/report/{handle}", response_class=HTMLResponse, summary="Get latest scan as HTML report")
 async def report(handle: str) -> HTMLResponse:
-    latest = store.latest_result_for_handle(handle.strip().lstrip("@"))
+    normalized = handle.strip().lstrip("@")
+    latest = store.latest_result_for_handle(normalized)
     if latest is None:
         raise HTTPException(status_code=404, detail="No scan history for this handle")
-    return HTMLResponse(content=render_html_report(latest))
+    series = store.score_series(normalized, limit=30)
+    return HTMLResponse(content=render_html_report(latest, score_series=series))
 
 
 @app.get("/insights/{handle}", summary="Get aggregated insights for a handle")

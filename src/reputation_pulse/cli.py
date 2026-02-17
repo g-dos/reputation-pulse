@@ -113,7 +113,8 @@ def report(
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
         raise typer.Exit(code=1)
     report_path = output or default_report_path(normalized)
-    path = write_html_report(latest, report_path)
+    series = store.score_series(normalized, limit=30)
+    path = write_html_report(latest, report_path, score_series=series)
     console.print(f"Report written to {path}")
 
 
