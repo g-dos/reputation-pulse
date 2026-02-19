@@ -70,6 +70,11 @@ def test_report_404_when_missing(monkeypatch):
     assert response.status_code == 404
 
 
+def test_report_invalid_handle():
+    response = client.get("/report/%20%20")
+    assert response.status_code == 400
+
+
 def test_report_returns_html(monkeypatch):
     monkeypatch.setattr(
         api_module.store,

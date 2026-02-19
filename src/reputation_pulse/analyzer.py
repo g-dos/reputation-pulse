@@ -4,7 +4,7 @@ from typing import Any
 
 from reputation_pulse.collectors.github import GitHubCollector
 from reputation_pulse.collectors.rss import RssCollector
-from reputation_pulse.errors import InvalidHandleError
+from reputation_pulse.handles import normalize_handle
 from reputation_pulse.reports import build_summary
 from reputation_pulse.scoring import calculate_score
 
@@ -19,10 +19,7 @@ class ReputationAnalyzer:
         self.rss_collector = rss_collector or RssCollector()
 
     async def run(self, handle: str) -> dict[str, Any]:
-        normalized_handle = handle.strip().lstrip("@")
-        if not normalized_handle:
-            raise InvalidHandleError("Handle cannot be empty")
-
+        normalized_handle = normalize_handle(handle)
         github_data = await self.github_collector.collect(normalized_handle)
         web_data = await self.rss_collector.collect(str(github_data.get("blog_url", "")))
         score = calculate_score(github_data)

@@ -23,6 +23,12 @@ def test_cli_report_requires_existing_scan(monkeypatch):
     assert "No local scan found" in result.stdout
 
 
+def test_cli_report_invalid_handle():
+    result = runner.invoke(cli_module.app, ["report", "   "])
+    assert result.exit_code == 2
+    assert "Invalid handle" in result.stdout
+
+
 def test_cli_insights_requires_existing_scan(monkeypatch):
     monkeypatch.setattr(cli_module.store, "handle_insights", lambda _handle: None)
     result = runner.invoke(cli_module.app, ["insights", "missing"])

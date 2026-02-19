@@ -16,6 +16,7 @@ from reputation_pulse.errors import (
     UpstreamRateLimitError,
 )
 from reputation_pulse.exporters import insights_to_csv, insights_to_json, write_export
+from reputation_pulse.handles import normalize_handle
 from reputation_pulse.html_report import default_report_path, write_html_report
 from reputation_pulse.scan_service import ScanService
 from reputation_pulse.storage import ScanStore
@@ -25,6 +26,14 @@ console = Console()
 analyzer = ReputationAnalyzer()
 store = ScanStore()
 scan_service = ScanService(analyzer=analyzer, store=store)
+
+
+def _normalize_or_exit(handle: str) -> str:
+    try:
+        return normalize_handle(handle)
+    except InvalidHandleError as exc:
+        console.print(f"[red]Invalid handle:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
 
 
 def _display_summary(result: dict[str, object]) -> None:
@@ -109,7 +118,7 @@ def report(
     ),
 ) -> None:
     """Generate an HTML report from the latest stored scan for a handle."""
-    normalized = handle.strip().lstrip("@")
+    normalized = _normalize_or_exit(handle)
     latest = store.latest_result_for_handle(normalized)
     if latest is None:
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
@@ -123,7 +132,7 @@ def report(
 @app.command()
 def insights(handle: str) -> None:
     """Show aggregated local insights for a handle."""
-    normalized = handle.strip().lstrip("@")
+    normalized = _normalize_or_exit(handle)
     insight = store.handle_insights(normalized)
     if insight is None:
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
@@ -148,7 +157,7 @@ def insights_export(
     output: str = typer.Option("", "--output", help="Output file path"),
 ) -> None:
     """Export aggregated insights to JSON or CSV."""
-    normalized = handle.strip().lstrip("@")
+    normalized = _normalize_or_exit(handle)
     insight = store.handle_insights(normalized)
     if insight is None:
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
@@ -178,7 +187,7 @@ def series(
     json_output: bool = typer.Option(False, "--json", help="Return raw JSON"),
 ) -> None:
     """Show score series for a handle."""
-    normalized = handle.strip().lstrip("@")
+    normalized = _normalize_or_exit(handle)
     items = store.score_series(normalized, limit=limit)
     if not items:
         console.print(f"No local scan found for '{normalized}'. Run scan first.")
