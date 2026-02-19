@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from typing import TypeVar
 
 import typer
 import uvicorn
@@ -26,6 +27,11 @@ console = Console()
 analyzer = ReputationAnalyzer()
 store = ScanStore()
 scan_service = ScanService(analyzer=analyzer, store=store)
+T = TypeVar("T")
+
+
+def _not_found_message(handle: str) -> str:
+    return f"No local scan found for '{handle}'. Run scan first."
 
 
 def _normalize_or_exit(handle: str) -> str:
@@ -34,6 +40,13 @@ def _normalize_or_exit(handle: str) -> str:
     except InvalidHandleError as exc:
         console.print(f"[red]Invalid handle:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+
+
+def _require_or_exit(payload: T | None, handle: str) -> T:
+    if payload is None:
+        console.print(_not_found_message(handle))
+        raise typer.Exit(code=1)
+    return payload
 
 
 def _display_summary(result: dict[str, object]) -> None:
@@ -119,10 +132,7 @@ def report(
 ) -> None:
     """Generate an HTML report from the latest stored scan for a handle."""
     normalized = _normalize_or_exit(handle)
-    latest = store.latest_result_for_handle(normalized)
-    if latest is None:
-        console.print(f"No local scan found for '{normalized}'. Run scan first.")
-        raise typer.Exit(code=1)
+    latest = _require_or_exit(store.latest_result_for_handle(normalized), normalized)
     report_path = output or default_report_path(normalized)
     series = store.score_series(normalized, limit=30)
     path = write_html_report(latest, report_path, score_series=series)
@@ -133,10 +143,7 @@ def report(
 def insights(handle: str) -> None:
     """Show aggregated local insights for a handle."""
     normalized = _normalize_or_exit(handle)
-    insight = store.handle_insights(normalized)
-    if insight is None:
-        console.print(f"No local scan found for '{normalized}'. Run scan first.")
-        raise typer.Exit(code=1)
+    insight = _require_or_exit(store.handle_insights(normalized), normalized)
 
     table = Table(title=f"Insights: {normalized}", show_header=False)
     table.add_row("Scans", str(insight["scans_count"]))
@@ -158,10 +165,7 @@ def insights_export(
 ) -> None:
     """Export aggregated insights to JSON or CSV."""
     normalized = _normalize_or_exit(handle)
-    insight = store.handle_insights(normalized)
-    if insight is None:
-        console.print(f"No local scan found for '{normalized}'. Run scan first.")
-        raise typer.Exit(code=1)
+    insight = _require_or_exit(store.handle_insights(normalized), normalized)
 
     export_format = format.strip().lower()
     if export_format not in {"json", "csv"}:
@@ -190,7 +194,7 @@ def series(
     normalized = _normalize_or_exit(handle)
     items = store.score_series(normalized, limit=limit)
     if not items:
-        console.print(f"No local scan found for '{normalized}'. Run scan first.")
+        console.print(_not_found_message(normalized))
         raise typer.Exit(code=1)
 
     if json_output:

@@ -20,6 +20,7 @@ from reputation_pulse.storage import ScanStore
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
 store = ScanStore()
 scan_service = ScanService(analyzer=ReputationAnalyzer(), store=store)
+NO_SCAN_HISTORY_DETAIL = "No scan history for this handle"
 
 
 def _normalize_or_400(handle: str) -> str:
@@ -27,6 +28,12 @@ def _normalize_or_400(handle: str) -> str:
         return normalize_handle(handle)
     except InvalidHandleError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+def _or_404(payload: dict[str, object] | None) -> dict[str, object]:
+    if payload is None:
+        raise HTTPException(status_code=404, detail=NO_SCAN_HISTORY_DETAIL)
+    return payload
 
 
 @app.get("/health", summary="Basic health check")
@@ -58,9 +65,7 @@ async def history(limit: int = Query(default=10, ge=1, le=100)) -> dict[str, obj
 @app.get("/report/{handle}", response_class=HTMLResponse, summary="Get latest scan as HTML report")
 async def report(handle: str) -> HTMLResponse:
     normalized = _normalize_or_400(handle)
-    latest = store.latest_result_for_handle(normalized)
-    if latest is None:
-        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    latest = _or_404(store.latest_result_for_handle(normalized))
     series = store.score_series(normalized, limit=30)
     return HTMLResponse(content=render_html_report(latest, score_series=series))
 
@@ -68,10 +73,7 @@ async def report(handle: str) -> HTMLResponse:
 @app.get("/insights/{handle}", summary="Get aggregated insights for a handle")
 async def insights(handle: str) -> dict[str, object]:
     normalized = _normalize_or_400(handle)
-    insight = store.handle_insights(normalized)
-    if insight is None:
-        raise HTTPException(status_code=404, detail="No scan history for this handle")
-    return insight
+    return _or_404(store.handle_insights(normalized))
 
 
 @app.get("/series/{handle}", summary="Get score time series for a handle")
@@ -82,7 +84,7 @@ async def series(
     normalized = _normalize_or_400(handle)
     points = store.score_series(normalized, limit=limit)
     if not points:
-        raise HTTPException(status_code=404, detail="No scan history for this handle")
+        raise HTTPException(status_code=404, detail=NO_SCAN_HISTORY_DETAIL)
     return {"handle": normalized, "items": points}
 
 
@@ -92,9 +94,7 @@ async def insights_export(
     format: str = Query(default="json", pattern="^(json|csv)$"),
 ) -> Response:
     normalized = _normalize_or_400(handle)
-    insight = store.handle_insights(normalized)
-    if insight is None:
-        raise HTTPException(status_code=404, detail="No scan history for this handle")
+    insight = _or_404(store.handle_insights(normalized))
     if format == "csv":
         return Response(
             content=insights_to_csv(insight),
