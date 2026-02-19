@@ -32,6 +32,7 @@ class GitHubCollector:
                     settings.github_user_url.format(handle=handle),
                     headers=headers,
                 )
+                repo_data = await self._collect_all_repos(handle, headers, client)
             except httpx.HTTPError as exc:
                 raise CollectorError(f"GitHub request failed: {exc}") from exc
 
@@ -43,7 +44,6 @@ class GitHubCollector:
             raise CollectorError(f"GitHub user lookup failed with status {user_resp.status_code}")
 
         user_data = user_resp.json()
-        repo_data = await self._collect_all_repos(handle, headers)
         stars = sum(repo.get("stargazers_count", 0) for repo in repo_data)
         recent_repos = [
             {
@@ -76,34 +76,34 @@ class GitHubCollector:
         self,
         handle: str,
         headers: dict[str, str],
+        client: httpx.AsyncClient,
     ) -> list[dict[str, Any]]:
         repos: list[dict[str, Any]] = []
-        async with httpx.AsyncClient(timeout=settings.default_timeout) as client:
-            for page in range(1, settings.github_max_repo_pages + 1):
-                try:
-                    repos_resp = await client.get(
-                        settings.github_repos_url.format(handle=handle),
-                        params={"per_page": settings.github_repos_per_page, "page": page},
-                        headers=headers,
-                    )
-                except httpx.HTTPError as exc:
-                    raise CollectorError(f"GitHub repos request failed: {exc}") from exc
+        for page in range(1, settings.github_max_repo_pages + 1):
+            try:
+                repos_resp = await client.get(
+                    settings.github_repos_url.format(handle=handle),
+                    params={"per_page": settings.github_repos_per_page, "page": page},
+                    headers=headers,
+                )
+            except httpx.HTTPError as exc:
+                raise CollectorError(f"GitHub repos request failed: {exc}") from exc
 
-                if repos_resp.status_code == 404:
-                    raise UpstreamNotFoundError(f"GitHub user '{handle}' was not found")
-                if repos_resp.status_code in (403, 429):
-                    raise UpstreamRateLimitError("GitHub rate limit reached")
-                if repos_resp.status_code >= 400:
-                    raise CollectorError(
-                        f"GitHub repos lookup failed with status {repos_resp.status_code}"
-                    )
+            if repos_resp.status_code == 404:
+                raise UpstreamNotFoundError(f"GitHub user '{handle}' was not found")
+            if repos_resp.status_code in (403, 429):
+                raise UpstreamRateLimitError("GitHub rate limit reached")
+            if repos_resp.status_code >= 400:
+                raise CollectorError(
+                    f"GitHub repos lookup failed with status {repos_resp.status_code}"
+                )
 
-                payload = repos_resp.json()
-                if not isinstance(payload, list):
-                    raise CollectorError("GitHub repos payload is invalid")
+            payload = repos_resp.json()
+            if not isinstance(payload, list):
+                raise CollectorError("GitHub repos payload is invalid")
 
-                repos.extend(payload)
-                if len(payload) < settings.github_repos_per_page:
-                    break
+            repos.extend(payload)
+            if len(payload) < settings.github_repos_per_page:
+                break
 
         return repos
