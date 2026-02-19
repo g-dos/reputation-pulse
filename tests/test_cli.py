@@ -10,7 +10,7 @@ def test_cli_scan_invalid_handle(monkeypatch):
     async def fake_run(_handle: str):
         raise InvalidHandleError("Handle cannot be empty")
 
-    monkeypatch.setattr(cli_module.analyzer, "run", fake_run)
+    monkeypatch.setattr(cli_module.scan_service, "run_and_store", fake_run)
     result = runner.invoke(cli_module.app, ["scan", ""])
     assert result.exit_code == 2
     assert "Invalid handle" in result.stdout

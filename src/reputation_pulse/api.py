@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, Response
 
-from reputation_pulse.analyzer import ReputationAnalyzer
 from reputation_pulse.errors import (
     CollectorError,
     InvalidHandleError,
@@ -14,12 +13,12 @@ from reputation_pulse.exporters import insights_to_csv, insights_to_json
 from reputation_pulse.handles import normalize_handle
 from reputation_pulse.html_report import render_html_report
 from reputation_pulse.models import ScanRequest
-from reputation_pulse.scan_service import ScanService
-from reputation_pulse.storage import ScanStore
+from reputation_pulse.runtime import build_runtime
 
 app = FastAPI(title="Reputation Pulse API", version="0.1.0")
-store = ScanStore()
-scan_service = ScanService(analyzer=ReputationAnalyzer(), store=store)
+runtime = build_runtime()
+store = runtime.store
+scan_service = runtime.scan_service
 NO_SCAN_HISTORY_DETAIL = "No scan history for this handle"
 
 

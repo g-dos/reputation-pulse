@@ -9,7 +9,6 @@ import uvicorn
 from rich.console import Console
 from rich.table import Table
 
-from reputation_pulse.analyzer import ReputationAnalyzer
 from reputation_pulse.errors import (
     CollectorError,
     InvalidHandleError,
@@ -19,14 +18,13 @@ from reputation_pulse.errors import (
 from reputation_pulse.exporters import insights_to_csv, insights_to_json, write_export
 from reputation_pulse.handles import normalize_handle
 from reputation_pulse.html_report import default_report_path, write_html_report
-from reputation_pulse.scan_service import ScanService
-from reputation_pulse.storage import ScanStore
+from reputation_pulse.runtime import build_runtime
 
 app = typer.Typer(help="Reputation Pulse CLI")
 console = Console()
-analyzer = ReputationAnalyzer()
-store = ScanStore()
-scan_service = ScanService(analyzer=analyzer, store=store)
+runtime = build_runtime()
+store = runtime.store
+scan_service = runtime.scan_service
 T = TypeVar("T")
 
 
